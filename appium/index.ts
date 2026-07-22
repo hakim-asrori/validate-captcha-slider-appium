@@ -10,7 +10,7 @@ const driver = await remote({
   logLevel: "error",
   capabilities: {
     platformName: "Android",
-    "appium:deviceName": "0611625123009007",
+    "appium:deviceName": "1555119395000AJ",
     "appium:automationName": "UiAutomator2",
     "appium:noReset": true,
     "appium:fullReset": false,
@@ -32,7 +32,7 @@ const driver = await remote({
     "appium:ignoreHiddenApiPolicyError": true,
     "appium:skipDeviceInitialization": false,
     "appium:skipServerInstallation": false,
-    "appium:udid": "0611625123009007",
+    "appium:udid": "1555119395000AJ",
   },
 });
 
@@ -40,7 +40,7 @@ async function main() {
   await driver.url("http://10.255.10.137:5173/");
   await driver.pause(5000);
 
-  driver.saveScreenshot("screenshot.png");
+  await driver.saveScreenshot("screenshot.png");
 
   const formData = new FormData();
   const base64 = await driver.takeScreenshot();
@@ -53,15 +53,51 @@ async function main() {
   await driver.pause(4000);
 
   try {
-    const response = await fetch("http://127.0.0.1:8800/detect", {
+    const aiStart = performance.now();
+    const response = await fetch("http://127.0.0.1:8880/detect", {
       method: "POST",
       body: formData,
     });
+
+    const aiEnd = performance.now();
+
+    console.log(
+      `AI Response ${(aiEnd - aiStart).toFixed(2)} ms`
+    );
+
+    if (!response.ok) {
+      throw new Error(`AI Service Error (${response.status})`);
+    }
+
     const data: any = await response.json();
+
     console.log(data);
 
+    if (!data.detected) {
+      console.log("Gap tidak ditemukan.");
+      return;
+    }
+
     const gapCenter = data.gap_center;
+    if (!data.gap_center) {
+      throw new Error("gap_center not found.");
+    }
     const confidence = data.confidence;
+
+    console.log("========== AI RESULT ==========");
+    console.log("Detected   :", data.detected);
+    console.log("Confidence :", confidence);
+    console.log("Gap Center :", gapCenter);
+    console.log("BBox       :", data.bbox);
+    console.log("===============================");
+
+    if (confidence < 0.1) {
+      console.log(
+        `Confidence terlalu rendah (${confidence}), skip sliding.`
+      );
+
+      return;
+    }
 
     await driver.pause(10000);
     const sliderButtonElm = driver.$(
@@ -150,7 +186,9 @@ async function main() {
 
     await driver.performActions(actions);
     await driver.releaseActions();
-  } catch (error) {}
+  } catch (error) {
+    console.error(error);
+  }
 
   await driver.pause(20000);
   await driver.deleteSession();
