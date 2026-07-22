@@ -6,23 +6,27 @@ import numpy as np
 import time
 from uuid import uuid4
 
-from logger import logger
-from storage import (
+from app.logger import logger
+from app.storage import (
     save_failed,
     save_low_confidence,
     save_exception
 )
 
-from config import LOW_CONFIDENCE_THRESHOLD
+from app.config import LOW_CONFIDENCE_THRESHOLD, MODEL_PATH, YOLO_CONFIDENCE, YOLO_DEVICE, YOLO_IMAGE_SIZE
 
-logger.info("Loading YOLO model...")
-model = YOLO("best.pt")
-logger.info("YOLO model loaded successfully.")
+try:
+    logger.info(f"Loading YOLO model ({MODEL_PATH})...")
+    model = YOLO(MODEL_PATH)
+    logger.info("YOLO model loaded successfully.")
+except Exception:
+    logger.exception("Failed to load YOLO model.")
+    raise
 
 
 async def detect_gap(file: UploadFile):
 
-    request_id = str(uuid4())[:8]
+    request_id = uuid4().hex[:8]
 
     start = time.perf_counter()
 
@@ -89,9 +93,9 @@ async def detect_gap(file: UploadFile):
 
         results = model.predict(
             source=img,
-            imgsz=640,
-            conf=0.1,
-            device="cpu",
+            imgsz=YOLO_IMAGE_SIZE,
+            conf=YOLO_CONFIDENCE,
+            device=YOLO_DEVICE,
             verbose=False
         )
 
@@ -109,6 +113,14 @@ async def detect_gap(file: UploadFile):
 
             end = time.perf_counter()
 
+            timing = {
+                "read": (read_time - start) * 1000,
+                "decode": (decode_time - read_time) * 1000,
+                "predict": (predict_time - decode_time) * 1000,
+                "process": (end - predict_time) * 1000,
+                "total": (end - start) * 1000,
+            }
+
             logger.warning(
                 f"[{request_id}] RESPONSE "
                 f"| detected=False "
@@ -117,16 +129,37 @@ async def detect_gap(file: UploadFile):
 
             logger.info(
                 f"[{request_id}] TIMING "
-                f"| read={(read_time-start)*1000:.2f}ms "
-                f"| decode={(decode_time-read_time)*1000:.2f}ms "
-                f"| predict={(predict_time-decode_time)*1000:.2f}ms "
-                f"| process={(end-predict_time)*1000:.2f}ms "
-                f"| total={(end-start)*1000:.2f}ms"
+                f"| read={timing['read']:.2f}ms "
+                f"| decode={timing['decode']:.2f}ms "
+                f"| predict={timing['predict']:.2f}ms "
+                f"| process={timing['process']:.2f}ms "
+                f"| total={timing['total']:.2f}ms"
             )
 
             return {
+
+                "request_id": request_id,
+
+                "filename": file.filename,
+
+                "file_size": len(contents),
+
                 "detected": False,
+
+                "confidence": None,
+
+                "bbox": None,
+
+                "gap_center": None,
+
+                "status": "FAILED",
+
+                "screenshot_path": screenshot,
+
+                "timing": timing,
+
                 "message": "Tidak ada gap terdeteksi"
+
             }
 
         # =====================================
@@ -143,11 +176,15 @@ async def detect_gap(file: UploadFile):
         gap_center_x = (x1 + x2) / 2
         gap_center_y = (y1 + y2) / 2
 
+        status = "SUCCESS"
+        screenshot = None
+
         # =====================================
         # Low Confidence
         # =====================================
 
         if conf < LOW_CONFIDENCE_THRESHOLD:
+            status = "LOW_CONFIDENCE"
 
             annotated = result.plot()
 
@@ -163,35 +200,61 @@ async def detect_gap(file: UploadFile):
 
         end = time.perf_counter()
 
+        timing = {
+            "read": (read_time - start) * 1000,
+            "decode": (decode_time - read_time) * 1000,
+            "predict": (predict_time - decode_time) * 1000,
+            "process": (end - predict_time) * 1000,
+            "total": (end - start) * 1000,
+        }
+
         logger.info(
             f"[{request_id}] RESPONSE "
             f"| detected=True "
+            f"| status={status} "
             f"| confidence={conf:.4f} "
             f"| center=({gap_center_x:.2f},{gap_center_y:.2f})"
         )
 
         logger.info(
             f"[{request_id}] TIMING "
-            f"| read={(read_time-start)*1000:.2f}ms "
-            f"| decode={(decode_time-read_time)*1000:.2f}ms "
-            f"| predict={(predict_time-decode_time)*1000:.2f}ms "
-            f"| process={(end-predict_time)*1000:.2f}ms "
-            f"| total={(end-start)*1000:.2f}ms"
+            f"| read={timing['read']:.2f}ms "
+            f"| decode={timing['decode']:.2f}ms "
+            f"| predict={timing['predict']:.2f}ms "
+            f"| process={timing['process']:.2f}ms "
+            f"| total={timing['total']:.2f}ms"
         )
 
         return {
+
+            "request_id": request_id,
+
+            "filename": file.filename,
+
+            "file_size": len(contents),
+
             "detected": True,
-            "confidence": round(conf, 4),
+
+            "confidence": conf,
+
             "bbox": {
                 "x1": round(x1, 2),
                 "y1": round(y1, 2),
                 "x2": round(x2, 2),
-                "y2": round(y2, 2)
+                "y2": round(y2, 2),
             },
+
             "gap_center": {
                 "x": round(gap_center_x, 2),
-                "y": round(gap_center_y, 2)
-            }
+                "y": round(gap_center_y, 2),
+            },
+
+            "status": status,
+
+            "screenshot_path": screenshot,
+
+            "timing": timing,
+
         }
 
     except HTTPException:

@@ -9,7 +9,8 @@ logger = logging.getLogger("captcha-service")
 logger.setLevel(logging.INFO)
 
 # Hindari duplicate log
-logger.handlers.clear()
+if not logger.handlers:
+    logger.propagate = False
 
 handler = TimedRotatingFileHandler(
     filename="logs/app.log",
