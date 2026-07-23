@@ -1,0 +1,19 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Runtime files
+logs/
+*.log
+
+# Local environment variables
+.env
+
+# Captcha runtime storage
+captcha_api/storage/screenshots/
