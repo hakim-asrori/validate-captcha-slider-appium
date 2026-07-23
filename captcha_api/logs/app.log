@@ -196,3 +196,19 @@
 2026-07-22 17:39:14,819 | INFO | [d5263c99] REQUEST | size=297636 bytes
 2026-07-22 17:39:15,042 | INFO | [d5263c99] RESPONSE | detected=True | status=SUCCESS | confidence=0.9238 | center=(459.46,866.13)
 2026-07-22 17:39:15,043 | INFO | [d5263c99] TIMING | read=0.26ms | decode=21.95ms | predict=198.94ms | process=2.97ms | total=224.12ms
+2026-07-22 17:48:46,354 | INFO | Loading YOLO model...
+2026-07-22 17:48:46,390 | INFO | YOLO model loaded successfully.
+2026-07-22 17:48:49,300 | INFO | Loading YOLO model...
+2026-07-22 17:48:49,342 | INFO | YOLO model loaded successfully.
+2026-07-22 17:49:15,637 | INFO | [f5a9d5c1] REQUEST | filename=screenshot.png | type=image/png
+2026-07-22 17:49:15,637 | INFO | [f5a9d5c1] REQUEST | size=296090 bytes
+2026-07-22 17:49:15,730 | INFO | [f5a9d5c1] RESPONSE | detected=True | confidence=0.8457 | center=(282.85,810.55)
+2026-07-22 17:49:15,730 | INFO | [f5a9d5c1] TIMING | read=0.15ms | decode=10.88ms | predict=82.39ms | process=0.18ms | total=93.61ms
+2026-07-22 17:50:10,590 | INFO | [7a3cb856] REQUEST | filename=screenshot.png | type=image/png
+2026-07-22 17:50:10,590 | INFO | [7a3cb856] REQUEST | size=296971 bytes
+2026-07-22 17:50:10,650 | INFO | [7a3cb856] RESPONSE | detected=True | confidence=0.8942 | center=(391.38,864.63)
+2026-07-22 17:50:10,650 | INFO | [7a3cb856] TIMING | read=0.13ms | decode=10.37ms | predict=48.57ms | process=0.79ms | total=59.85ms
+2026-07-22 17:56:37,719 | INFO | [23c9158e] REQUEST | filename=screenshot.png | type=image/png
+2026-07-22 17:56:37,719 | INFO | [23c9158e] REQUEST | size=301104 bytes
+2026-07-22 17:56:37,768 | INFO | [23c9158e] RESPONSE | detected=True | confidence=0.8991 | center=(264.93,865.31)
+2026-07-22 17:56:37,768 | INFO | [23c9158e] TIMING | read=0.19ms | decode=11.49ms | predict=37.50ms | process=0.08ms | total=49.26ms
